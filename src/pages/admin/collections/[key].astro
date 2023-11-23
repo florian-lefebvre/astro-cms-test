@@ -1,0 +1,85 @@
+---
+import type { GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
+import { zodToJsonSchema } from "zod-to-json-schema";
+import { collections } from "../../../content/config";
+
+export const getStaticPaths = (() => {
+  return Object.entries(collections).map(([key, collection]) => ({
+    params: { key },
+    props: { key, collection },
+  }));
+}) satisfies GetStaticPaths;
+
+const { key, collection } = Astro.props;
+
+const jsonSchema = zodToJsonSchema(collection.schema);
+
+const properties: Array<{ name: string; field: unknown }> = Object.entries(
+  (jsonSchema as any).properties
+).map(([k, v]) => ({ name: k, field: v }));
+
+const posts = await getCollection("posts");
+
+const matches = {
+  date: {
+    type: "string",
+    format: "date-time",
+  },
+  text: {
+    type: "string",
+  },
+  number: {
+    type: "number",
+  },
+};
+
+const detectField = (field: Record<string, any>) => {
+  for (const [key, obj] of Object.entries(matches)) {
+    let skip = false;
+    for (const [k, v] of Object.entries(obj)) {
+      if (!skip && field[k] !== v) {
+        skip = true;
+      }
+    }
+    if (!skip) {
+      return key;
+    }
+  }
+  return "unknown";
+};
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Admin</title>
+  </head>
+  <body>
+    <h1>Admin {key}</h1>
+    <!-- <pre>{JSON.stringify(jsonSchema, null, 2)}</pre> -->
+    <pre>{JSON.stringify(properties, null, 2)}</pre>
+    <!-- <pre>{JSON.stringify(posts, null, 2)}</pre> -->
+    <form>
+      {
+        properties.map(({ name, field }) => {
+          const type = detectField(field);
+
+          if (type === "unknown") {
+            return <div>Unknown</div>;
+          }
+
+          return (
+            <div>
+              <label for={name}>{name}</label>
+              <input id={name} {type} />
+            </div>
+          );
+        })
+      }
+    </form>
+  </body>
+</html>

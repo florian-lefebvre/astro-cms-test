@@ -1,0 +1,24 @@
+---
+import { collections } from "../../content/config";
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Admin</title>
+  </head>
+  <body>
+    <h1>Admin</h1>
+    {
+      Object.entries(collections).map(([key, data]) => (
+        <div>
+          <h2>{key}</h2>
+          <a href={`/admin/collections/${key}`}>View</a>
+        </div>
+      ))
+    }
+  </body>
+</html>
